@@ -7,7 +7,8 @@ from datasets import PascalVOCDataset
 from utils import *
 
 # Data parameters
-data_folder = './'  # folder with data files
+data_folder = './output'  # folder with data files
+models_folder = './output'
 keep_difficult = True  # use objects considered difficult to detect?
 
 # Model parameters
@@ -93,7 +94,8 @@ def main():
               epoch=epoch)
 
         # Save checkpoint
-        save_checkpoint(epoch, model, optimizer)
+        if epoch%10 == 0:
+            save_checkpoint(epoch, model, optimizer, models_folder)
 
 
 def train(train_loader, model, criterion, optimizer, epoch):

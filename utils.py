@@ -666,7 +666,7 @@ def accuracy(scores, targets, k):
     return correct_total.item() * (100.0 / batch_size)
 
 
-def save_checkpoint(epoch, model, optimizer):
+def save_checkpoint(epoch, model, optimizer, folder):
     """
     Save model checkpoint.
 
@@ -676,8 +676,9 @@ def save_checkpoint(epoch, model, optimizer):
     """
     state = {'epoch': epoch,
              'model': model,
+             'model_state': model.state_dict(),
              'optimizer': optimizer}
-    filename = 'checkpoint_ssd300.pth.tar'
+    filename = folder + '/checkpoint_ssd300-%d.pth.tar'%(epoch)
     torch.save(state, filename)
 
 
