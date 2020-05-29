@@ -5,16 +5,17 @@ import torch.utils.data
 from model import SSD300, MultiBoxLoss
 from datasets import PascalVOCDataset
 from utils import *
+from definitions import ROOT_DIR, device
 
 # Data parameters
-data_folder = './output'  # folder with data files
-models_folder = './output'
+print(ROOT_DIR)
+data_folder = ROOT_DIR/'output'  # folder with data files
+models_folder = ROOT_DIR/'output'
 keep_difficult = True  # use objects considered difficult to detect?
 
 # Model parameters
 # Not too many here since the SSD300 has a very specific structure
 n_classes = len(label_map)  # number of different types of objects
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Learning parameters
 checkpoint = None  # path to model checkpoint, None if none
