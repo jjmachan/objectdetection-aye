@@ -2,42 +2,37 @@ import time
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-from model import SSD300, MultiBoxLoss
-from datasets import PascalVOCDataset
-from utils import *
-from definitions import ROOT_DIR, device
 
-# Data parameters
-print(ROOT_DIR)
-data_folder = ROOT_DIR/'output'  # folder with data files
-models_folder = ROOT_DIR/'output'
-keep_difficult = True  # use objects considered difficult to detect?
+from .model import SSD300, MultiBoxLoss
+from .datasets import PascalVOCDataset
+from .utils import AverageMeter, label_map, adjust_learning_rate, save_checkpoint, clip_gradient
+from .definitions import ROOT_DIR, device
 
-# Model parameters
-# Not too many here since the SSD300 has a very specific structure
-n_classes = len(label_map)  # number of different types of objects
-
-# Learning parameters
-checkpoint = None  # path to model checkpoint, None if none
-batch_size = 8  # batch size
-iterations = 120000  # number of iterations to train
-workers = 4  # number of workers for loading data in the DataLoader
-print_freq = 200  # print training status every __ batches
-lr = 1e-3  # learning rate
-decay_lr_at = [80000, 100000]  # decay learning rate after these many iterations
-decay_lr_to = 0.1  # decay learning rate to this fraction of the existing learning rate
-momentum = 0.9  # momentum
-weight_decay = 5e-4  # weight decay
-grad_clip = None  # clip if gradients are exploding, which may happen at larger batch sizes (sometimes at 32) - you will recognize it by a sorting error in the MuliBox loss calculation
 
 cudnn.benchmark = True
 
 
-def main():
+def main_train(params: dict):
     """
     Training.
     """
-    global start_epoch, label_map, epoch, checkpoint, decay_lr_at
+
+    # Declare the vars to use.
+    checkpoint = params['checkpoint']
+    decay_lr_at = params['decay_lr_at']
+    n_classes = params['n_classes']
+    weight_decay = params['weight_decay']
+    lr = params['lr']
+    momentum = params['momentum']
+    workers = params['workers']
+    data_folder = params['data_folder']
+    models_folder = params['models_folder']
+    keep_difficult = params['keep_difficult']
+    batch_size = params['batch_size']
+    iterations = params['iterations']
+    decay_lr_to = params['decay_lr_to']
+    print_freq = params['print_freq']
+    grad_clip = params['grad_clip']
 
     # Initialize model or load checkpoint
     if checkpoint is None:
@@ -77,10 +72,12 @@ def main():
     # Calculate total number of epochs to train and the epochs to decay learning rate at (i.e. convert iterations to epochs)
     # To convert iterations to epochs, divide iterations by the number of iterations per epoch
     # The paper trains for 120,000 iterations with a batch size of 32, decays after 80,000 and 100,000 iterations
+    print('1', iterations, len(train_dataset))
     epochs = iterations // (len(train_dataset) // 32)
     decay_lr_at = [it // (len(train_dataset) // 32) for it in decay_lr_at]
 
     # Epochs
+    print('hai', start_epoch, epochs)
     for epoch in range(start_epoch, epochs):
 
         # Decay learning rate at particular epochs
@@ -92,14 +89,16 @@ def main():
               model=model,
               criterion=criterion,
               optimizer=optimizer,
-              epoch=epoch)
+              epoch=epoch,
+              print_freq=print_freq,
+              grad_clip=grad_clip)
 
         # Save checkpoint
         if epoch%10 == 0:
             save_checkpoint(epoch, model, optimizer, models_folder)
 
 
-def train(train_loader, model, criterion, optimizer, epoch):
+def train(train_loader, model, criterion, optimizer, epoch, print_freq, grad_clip=None):
     """
     One epoch's training.
 
@@ -159,5 +158,3 @@ def train(train_loader, model, criterion, optimizer, epoch):
     del predicted_locs, predicted_scores, images, boxes, labels  # free some memory since their histories may be stored
 
 
-if __name__ == '__main__':
-    main()

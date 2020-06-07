@@ -6,4 +6,5 @@ import torch
 CWD = Path(__file__).parent
 ROOT_DIR = CWD.parent
 
-device = torch.device('cuda:1')
+device = torch.device('cpu')
+cpu = torch.device('cpu')
